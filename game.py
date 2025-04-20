@@ -1,5 +1,5 @@
 from __future__ import print_function
-import tkinter as tk # For Python 3
+import tkinter as tk
 import tkinter.messagebox as messagebox
 
 import sys
@@ -25,10 +25,16 @@ class Grid:
 
     def __str__(self):
         return "\n".join([str(row) for row in self.cells])
+    
+    def __eq__(self, other):
+        check = isinstance(other, Grid)
+        if check:
+            return self.cells == other.cells
+        return check
         
     
     def copy(self):
-        return Grid(self.size, cells=self.cells.copy(), compressed=self.compressed, 
+        return Grid(self.size, cells=[row.copy() for row in self.cells.copy()], compressed=self.compressed, 
                     merged=self.merged, moved=self.moved, current_score=self.current_score, is_copy=True)
 
     def random_cell(self):
@@ -126,6 +132,38 @@ class Grid:
             print()
         print('-' * 40)
 
+    def up(self):
+        self.transpose()
+        self.left_compress()
+        self.left_merge()
+        self.moved = self.compressed or self.merged
+        self.left_compress()
+        self.transpose()
+
+    def left(self):
+        self.left_compress()
+        self.left_merge()
+        self.moved = self.compressed or self.merged
+        self.left_compress()
+
+    def down(self):
+        self.transpose()
+        self.reverse()
+        self.left_compress()
+        self.left_merge()
+        self.moved = self.compressed or self.merged
+        self.left_compress()
+        self.reverse()
+        self.transpose()
+
+    def right(self):
+        self.reverse()
+        self.left_compress()
+        self.left_merge()
+        self.moved = self.compressed or self.merged
+        self.left_compress()
+        self.reverse()
+
 
 class GamePanel:
     '''The GUI view class of the 2048 game showing via tkinter.'''
@@ -217,6 +255,7 @@ class GamePanel:
 
 class Game:
     '''The main game class which is the controller of the whole game.'''
+    AI_DELAY = 1
     def __init__(self, grid, panel, verbose=True):
         self.grid = grid
         self.panel = panel
@@ -242,7 +281,7 @@ class Game:
         self.panel.paint()
         
         self.history_ai.append(self.grid.copy())
-        self.panel.root.after(1, lambda: self.simulate_step(ai_func))
+        self.panel.root.after(Game.AI_DELAY, lambda: self.simulate_step(ai_func))
         self.panel.root.mainloop()
         return self.grid.current_score
     
@@ -263,6 +302,7 @@ class Game:
             else:
                 self.left()
 
+            #assert ((self.grid.cells == self.history_ai[-1].cells) != self.grid.moved)
             if self.grid.cells != self.history_ai[-1].cells:
                 self.history_ai.append(self.grid.copy())
             else:
@@ -291,7 +331,7 @@ class Game:
                     self.panel.root.destroy() 
                 return self.grid.current_score
 
-            self.panel.root.after(1, lambda: self.simulate_step(ai_func))
+            self.panel.root.after(Game.AI_DELAY, lambda: self.simulate_step(ai_func))
 
     def add_start_cells(self):
         for i in range(self.start_cells_num):
@@ -352,36 +392,20 @@ class Game:
                                     'Game over!')
 
     def up(self):
-        self.grid.transpose()
-        self.grid.left_compress()
-        self.grid.left_merge()
-        self.grid.moved = self.grid.compressed or self.grid.merged
-        self.grid.left_compress()
-        self.grid.transpose()
+        self.grid.up()
+
 
     def left(self):
-        self.grid.left_compress()
-        self.grid.left_merge()
-        self.grid.moved = self.grid.compressed or self.grid.merged
-        self.grid.left_compress()
+        self.grid.left()
+       
 
     def down(self):
-        self.grid.transpose()
-        self.grid.reverse()
-        self.grid.left_compress()
-        self.grid.left_merge()
-        self.grid.moved = self.grid.compressed or self.grid.merged
-        self.grid.left_compress()
-        self.grid.reverse()
-        self.grid.transpose()
+        self.grid.down()
+       
 
     def right(self):
-        self.grid.reverse()
-        self.grid.left_compress()
-        self.grid.left_merge()
-        self.grid.moved = self.grid.compressed or self.grid.merged
-        self.grid.left_compress()
-        self.grid.reverse()
+        self.grid.right()
+   
 
 
 if __name__ == '__main__':

@@ -1,17 +1,32 @@
 from game import GamePanel, Grid, Game
 import random
+import time
+
 
 def default_uniform(grids: list[Grid]):
-    r = random.random()
-    print(grids[-1], end="\n\n")
-    if r < 0.25:
-        return 'w'
-    elif r < 0.5:
-        return 'a'
-    elif r < 0.75:
-        return 's'
-    else:
-        return 'd'
+    valid = []
+    currboard = grids[-1].copy()
+    explore_up, explore_left, explore_down, explore_right = [currboard.copy() for i in range(4)]
+    explore_up.up()
+    explore_left.left()
+    explore_down.down()
+    explore_right.right()
+    
+    if explore_up != currboard:
+        valid.append('w')
+    if explore_left != currboard:
+        valid.append('a')
+    if explore_down != currboard:
+        valid.append('s')
+    if explore_right != currboard:
+        valid.append('d')
+    print(valid)
+    print(currboard)
+    print()
+    print(explore_right)
+    direction = random.choice(valid)
+    print(direction)
+    return direction
     
     
 if __name__ == '__main__':
