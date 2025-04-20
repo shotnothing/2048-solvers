@@ -3,6 +3,7 @@ import tkinter as tk
 import tkinter.messagebox as messagebox
 
 import sys
+import math
 import random
 
 
@@ -91,7 +92,7 @@ class Grid:
             for j in range(self.size - 1):
                 if self.cells[i][j] == self.cells[i][j + 1] and \
                    self.cells[i][j] != 0:
-                    self.cells[i][j] *= 2
+                    self.cells[i][j] <<= 1
                     self.cells[i][j + 1] = 0
                     self.current_score += self.cells[i][j]
                     self.merged = True
@@ -171,6 +172,11 @@ class GamePanel:
     CELL_PADDING = 10
     BACKGROUND_COLOR = '#92877d'
     EMPTY_CELL_COLOR = '#9e948a'
+    SUPERSCRIPT_MAP = {
+        "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴",
+        "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹"
+    }
+
     CELL_BACKGROUND_COLOR_DICT = {
         '2': '#eee4da',
         '4': '#ede0c8',
@@ -185,10 +191,11 @@ class GamePanel:
         '2048': '#edc22e',
         '4096': '#eddd2e',
         '8192': '#ed61d2',
-        '16384': '#8c2eed',
-        '32768': '#7646f2',
+        '2¹⁴': '#8c2eed',
+        '2¹⁵': '#7646f2',
         'beyond': '#3c3a32'
     }
+
     CELL_COLOR_DICT = {
         '2': '#776e65',
         '4': '#776e65',
@@ -203,8 +210,8 @@ class GamePanel:
         '2048': '#f9f6f2',
         '4096': '#f9f6f2',
         '8192': '#f9f6f2',
-        '16384': '#f9f6f2',
-        '32768': '#f9f6f2',
+        '2¹⁴': '#f9f6f2',
+        '2¹⁵': '#f9f6f2',
         'beyond': '#f9f6f2'
     }
     FONT = ('Verdana', 24, 'bold')
@@ -234,6 +241,18 @@ class GamePanel:
             self.cell_labels.append(row_labels)
         self.background.pack(side=tk.TOP)
 
+    def get_cell_text(self, num):
+        string = str(num)
+        if len(string) < 5:
+            return string
+        
+        def to_superscript(n):
+            return ''.join(GamePanel.SUPERSCRIPT_MAP[d] for d in str(n))
+
+        exponent = int(math.log2(num))
+        return "2" + to_superscript(exponent)
+
+
     def paint(self):
         for i in range(self.grid.size):
             for j in range(self.grid.size):
@@ -242,7 +261,7 @@ class GamePanel:
                          text='',
                          bg=GamePanel.EMPTY_CELL_COLOR)
                 else:
-                    cell_text = str(self.grid.cells[i][j])
+                    cell_text = self.get_cell_text(self.grid.cells[i][j])
                     if self.grid.cells[i][j] > GamePanel.MAX_NUM:
                         bg_color = GamePanel.CELL_BACKGROUND_COLOR_DICT.get('beyond')
                         fg_color = GamePanel.CELL_COLOR_DICT.get('beyond')
