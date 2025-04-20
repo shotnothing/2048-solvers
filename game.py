@@ -22,9 +22,14 @@ class Grid:
         self.moved = moved
         self.current_score = current_score
         self.is_copy = is_copy
+
+    def __str__(self):
+        return "\n".join([str(row) for row in self.cells])
+        
     
     def copy(self):
-        return Grid(self.size, cells=self.cells.copy(), compressed=self.compressed, merged=self.merged, moved=self.moved, current_score=self.current_score, is_copy=True)
+        return Grid(self.size, cells=self.cells.copy(), compressed=self.compressed, 
+                    merged=self.merged, moved=self.moved, current_score=self.current_score, is_copy=True)
 
     def random_cell(self):
         cell = random.choice(self.retrieve_empty_cells())
@@ -236,7 +241,7 @@ class Game:
         self.add_start_cells()
         self.panel.paint()
         
-        self.history_ai.append(self.grid.cells.copy())
+        self.history_ai.append(self.grid.copy())
         self.panel.root.after(1, lambda: self.simulate_step(ai_func))
         self.panel.root.mainloop()
         return self.grid.current_score
@@ -258,8 +263,8 @@ class Game:
             else:
                 self.left()
 
-            if self.grid.cells != self.history_ai[-1]:
-                self.history_ai.append(self.grid.cells.copy())
+            if self.grid.cells != self.history_ai[-1].cells:
+                self.history_ai.append(self.grid.copy())
             else:
                 self.panel.root.destroy()
                 raise RuntimeError("Invalid Move! Move did not change board state")

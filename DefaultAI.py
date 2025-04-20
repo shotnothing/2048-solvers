@@ -1,10 +1,9 @@
 from game import GamePanel, Grid, Game
 import random
 
-def default_uniform(cells: list[list]):
+def default_uniform(grids: list[Grid]):
     r = random.random()
-    print(cells[-1], end="\n\n")
-
+    print(grids[-1], end="\n\n")
     if r < 0.25:
         return 'w'
     elif r < 0.5:
@@ -13,6 +12,7 @@ def default_uniform(cells: list[list]):
         return 's'
     else:
         return 'd'
+    
     
 if __name__ == '__main__':
     size = 4
