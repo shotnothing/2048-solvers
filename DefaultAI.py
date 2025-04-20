@@ -22,8 +22,6 @@ def default_uniform(grids: list[Grid]):
         valid.append('d')
     print(valid)
     print(currboard)
-    print()
-    print(explore_right)
     direction = random.choice(valid)
     print(direction)
     return direction
