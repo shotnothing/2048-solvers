@@ -71,7 +71,8 @@ def _build_row_tables():
             left_bits |= v << (i * BITS_PER_TILE)
         _ROW_LEFT_TABLE[row] = left_bits
 
-        # Right table via mirroring
+        # Right table via mirroring (not strictly necessary tbh, but I think it's faster 
+        # than reversing at runtime)
         _ROW_RIGHT_TABLE[row] = _reverse_row_bits(
             _ROW_LEFT_TABLE[ _reverse_row_bits(row) ]
         )
