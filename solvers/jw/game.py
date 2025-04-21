@@ -4,8 +4,8 @@ import random
 BITS_PER_TILE = 5
 NCOLS = NROWS = 4
 ROW_MASK      = (1 << BITS_PER_TILE * NCOLS) - 1
-_ROW_LEFT_TABLE  : list[int] = [0] * (1 << BITS_PER_TILE * NCOLS)
-_ROW_RIGHT_TABLE : list[int] = [0] * (1 << BITS_PER_TILE * NCOLS)
+_ROW_LEFT_TABLE  = None
+_ROW_RIGHT_TABLE = None
 
 def to_board(bitset):
     mask  = (1 << BITS_PER_TILE) - 1
@@ -47,6 +47,9 @@ def _reverse_row_bits(row: int) -> int:
     return t0 | t1 | t2 | t3
 
 def _build_row_tables():
+    global _ROW_LEFT_TABLE, _ROW_RIGHT_TABLE
+    _ROW_LEFT_TABLE = [0] * (1 << BITS_PER_TILE * NCOLS)
+    _ROW_RIGHT_TABLE = [0] * (1 << BITS_PER_TILE * NCOLS)
     mask = 0x1F
 
     for row in range(1 << 20):
@@ -73,10 +76,13 @@ def _build_row_tables():
             left_bits |= val << (idx * BITS_PER_TILE)
         _ROW_LEFT_TABLE[row] = left_bits
 
-        # Mirror left table to get right table
+    for row in range(1 << 20):
         _ROW_RIGHT_TABLE[row] = _reverse_row_bits(
             _ROW_LEFT_TABLE[_reverse_row_bits(row)]
         )
+        
+    print(f'sum of left table: {sum(_ROW_LEFT_TABLE)}')
+    print(f'sum of right table: {sum(_ROW_RIGHT_TABLE)}')
 
 def _transpose(bitset: int) -> int:
     res = 0
