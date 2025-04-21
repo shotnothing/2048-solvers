@@ -45,36 +45,34 @@ def _reverse_row_bits(row: int) -> int:
 
 def _build_row_tables():
     mask = 0x1F
+
     for row in range(1 << 20):
-        # Extract tile exponents (little‑endian)
-        tiles = [ (row >> (i * BITS_PER_TILE)) & mask for i in range(4) ]
+        tiles = [(row >> (i * BITS_PER_TILE)) & mask for i in range(4)]
 
-        # Slide and merge left
-        out = []
-        skip = False
-        for i in range(4):
-            if tiles[i] == 0:
-                continue
-            if not skip and i + 1 < 4 and tiles[i] == tiles[i+1] and tiles[i] != 0:
-                out.append(tiles[i] + 1)
-                skip = True
+        # Slide left
+        compressed = [t for t in tiles if t]
+
+        merged = []
+        i = 0
+        while i < len(compressed):
+            if i + 1 < len(compressed) and compressed[i] == compressed[i + 1]:
+                merged.append(compressed[i] + 1)
+                i += 2
             else:
-                if skip:
-                    skip = False
-                    continue
-                out.append(tiles[i])
-        out.extend([0] * (4 - len(out)))
+                merged.append(compressed[i])
+                i += 1
 
-        # Pack back into bits
+        merged.extend([0] * (4 - len(merged)))
+
+        # Pack back to bits
         left_bits = 0
-        for i, v in enumerate(out):
-            left_bits |= v << (i * BITS_PER_TILE)
+        for idx, val in enumerate(merged):
+            left_bits |= val << (idx * BITS_PER_TILE)
         _ROW_LEFT_TABLE[row] = left_bits
 
-        # Right table via mirroring (not strictly necessary tbh, but I think it's faster 
-        # than reversing at runtime, I should consider not using transpose too)
+        # Mirror left table to get right table
         _ROW_RIGHT_TABLE[row] = _reverse_row_bits(
-            _ROW_LEFT_TABLE[ _reverse_row_bits(row) ]
+            _ROW_LEFT_TABLE[_reverse_row_bits(row)]
         )
 
 def _transpose(bitset: int) -> int:
@@ -88,17 +86,21 @@ def _transpose(bitset: int) -> int:
 
 import random
 
-def generate_tile(bitset: int, rng: random.Random | None = None) -> int:
-    # Deterministic tests with injected RNG
-    if rng is None:
-        rng = random
-
+def get_empty_tiles(bitset: int) -> list[int]:
     mask = (1 << BITS_PER_TILE) - 1
     empty_indices = [
         i for i in range(NROWS * NCOLS)
         if ((bitset >> (i * BITS_PER_TILE)) & mask) == 0
     ]
+    return empty_indices
 
+
+def generate_tile(bitset: int, rng: random.Random | None = None) -> int:
+    # Deterministic tests with injected RNG
+    if rng is None:
+        rng = random
+
+    empty_indices = get_empty_tiles(bitset)
     if not empty_indices:
         # assert False, "No space to generate tile"
         return bitset
