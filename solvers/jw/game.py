@@ -1,3 +1,6 @@
+import time
+import random
+
 BITS_PER_TILE = 5
 NCOLS = NROWS = 4
 ROW_MASK      = (1 << BITS_PER_TILE * NCOLS) - 1
@@ -153,3 +156,91 @@ def up(bitset: int) -> int:
 
 def down(bitset: int) -> int:
     return _transpose( right(_transpose(bitset)) )
+
+
+
+
+
+class Game:
+    def __init__(self, board = None):
+        if board is None:
+            self.start_board = [
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+            ]
+        
+        self.start_bitset = to_bitset(self.start_board)
+
+    def watch_game(self, ai):
+        bs = self.start_bitset
+
+        for i in range(100000):
+            bs = generate_tile(bs)
+            action_space = get_action_space(bs)
+            print_board(to_board(bs), f"Turn {i}: Random tile")
+            if action_space:
+                bs = ai(bs, action_space)
+            else:
+                break
+            print_board(to_board(bs), f"Turn {i}: Taken action")
+            
+    def run_game(self, ai, max_iters=1000000, num_games=10000):
+        game_results = []
+
+        for game_index in range(num_games):
+            bs = self.start_bitset
+
+            start_iter = time.time()
+
+            for i in range(max_iters):
+                bs = generate_tile(bs)
+                action_space = get_action_space(bs)
+                if action_space:
+                    bs = ai(bs, action_space)
+                else:
+                    break
+                
+            time_taken = time.time() - start_iter
+            game_results.append({
+                'num_turns_taken': i,
+                'max_tile_reached': get_max_tile(bs),
+                'time_taken': time_taken,
+            })
+
+        return game_results, ai.__name__
+        
+    def print_results(self, game_results, ai_name):
+        print(f'Test: {ai_name}')
+
+        num_games = len(game_results)
+        print()
+        print(f'Number of games played: {num_games}')
+        print(f'Total time taken: {sum(result["time_taken"] for result in game_results)} seconds')
+        print(f'Games per second: {num_games / sum(result["time_taken"] for result in game_results)}')
+        print(f'Turns per second: {sum(result["num_turns_taken"] for result in game_results) / sum(result["time_taken"] for result in game_results)}')
+
+        print()
+        print(f'Max number of turns before game over: {max(result["num_turns_taken"] for result in game_results)}')
+        print(f'Min number of turns before game over: {min(result["num_turns_taken"] for result in game_results)}')
+        print(f'Average number of turns before game over: {sum(result["num_turns_taken"] for result in game_results) / len(game_results)}')
+
+        print()
+        print(f'Max tile reached: {max(result["max_tile_reached"] for result in game_results)}')
+        print(f'Min tile reached: {min(result["max_tile_reached"] for result in game_results)}')
+        print(f'Average max tile reached: {sum(result["max_tile_reached"] for result in game_results) / len(game_results)}')
+
+    def plot_results(self, game_results, ai_name):
+        import pandas as pd
+        import matplotlib.pyplot as plt
+
+        df = pd.DataFrame(game_results)
+
+        plt.hist(df['max_tile_reached'], bins=100)
+        plt.title(f'Max tile reached for {ai_name}')
+        plt.show()
+
+        plt.hist(df['num_turns_taken'], bins=100)
+        plt.title(f'Number of turns before game over for {ai_name}')
+        plt.show()
