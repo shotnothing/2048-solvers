@@ -1,8 +1,8 @@
 BITS_PER_TILE = 5
 NCOLS = NROWS = 4
 ROW_MASK      = (1 << BITS_PER_TILE * NCOLS) - 1
-_ROW_LEFT_TABLE  : list[int] = [0] * (1 << 20)
-_ROW_RIGHT_TABLE : list[int] = [0] * (1 << 20)
+_ROW_LEFT_TABLE  : list[int] = [0] * (1 << BITS_PER_TILE * NCOLS)
+_ROW_RIGHT_TABLE : list[int] = [0] * (1 << BITS_PER_TILE * NCOLS)
 
 def to_board(bitset):
     mask  = (1 << BITS_PER_TILE) - 1
@@ -72,7 +72,7 @@ def _build_row_tables():
         _ROW_LEFT_TABLE[row] = left_bits
 
         # Right table via mirroring (not strictly necessary tbh, but I think it's faster 
-        # than reversing at runtime)
+        # than reversing at runtime, I should consider not using transpose too)
         _ROW_RIGHT_TABLE[row] = _reverse_row_bits(
             _ROW_LEFT_TABLE[ _reverse_row_bits(row) ]
         )
@@ -85,6 +85,49 @@ def _transpose(bitset: int) -> int:
             tile = (bitset >> ((r * 4 + c) * BITS_PER_TILE)) & mask
             res  |= tile << ((c * 4 + r) * BITS_PER_TILE)
     return res
+
+import random
+
+def generate_tile(bitset: int, rng: random.Random | None = None) -> int:
+    # Deterministic tests with injected RNG
+    if rng is None:
+        rng = random
+
+    mask = (1 << BITS_PER_TILE) - 1
+    empty_indices = [
+        i for i in range(NROWS * NCOLS)
+        if ((bitset >> (i * BITS_PER_TILE)) & mask) == 0
+    ]
+
+    if not empty_indices:
+        # assert False, "No space to generate tile"
+        return bitset
+
+    pos   = rng.choice(empty_indices)
+    val   = 1 if rng.random() < 0.9 else 2
+    shift = pos * BITS_PER_TILE
+
+    return bitset | (val << shift)
+
+def get_action_space(bitset: int) -> list[int]:
+    out = []
+    if left(bitset) != bitset:
+        out.append(left)
+    if right(bitset) != bitset:
+        out.append(right)
+    if up(bitset) != bitset:
+        out.append(up)
+    if down(bitset) != bitset:
+        out.append(down)
+    return out
+
+def get_max_tile(bitset: int) -> int:
+    mask     = (1 << BITS_PER_TILE) - 1
+    max_exp  = 0
+    for i in range(NROWS * NCOLS):
+        max_exp = max(max_exp, (bitset >> (i * BITS_PER_TILE)) & mask)
+    return 1 << max_exp
+
 
 def left(bitset: int) -> int:
     res = 0
