@@ -118,10 +118,10 @@ def get_action_space(bitset: int) -> list[int]:
     out = []
     if left(bitset) != bitset:
         out.append(left)
-    if right(bitset) != bitset:
-        out.append(right)
     if up(bitset) != bitset:
         out.append(up)
+    if right(bitset) != bitset:
+        out.append(right)
     if down(bitset) != bitset:
         out.append(down)
     return out
@@ -170,7 +170,9 @@ class Game:
                 [0, 0, 0, 0],
                 [0, 0, 0, 0],
             ]
-        
+        else:
+            self.start_board = board
+
         self.start_bitset = to_bitset(self.start_board)
 
     def watch_game(self, ai):
